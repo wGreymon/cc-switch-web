@@ -22,6 +22,7 @@ import { useCapabilitiesQuery } from "@/lib/query";
 import {
   fetchCodexOauthModels,
   fetchGithubCopilotModels,
+  fetchModelsForConfig,
   showFetchModelsError,
   type FetchedModel,
 } from "@/lib/api/model-fetch";
@@ -965,7 +966,14 @@ export function ProviderForm({
 
   useEffect(() => {
     setManagedFetchedModels([]);
-  }, [appId, managedProviderType, authMode, authAccountId]);
+  }, [
+    appId,
+    managedProviderType,
+    authMode,
+    authAccountId,
+    baseUrl,
+    claudeDesktopBaseUrl,
+  ]);
 
   useEffect(() => {
     if (
@@ -1054,6 +1062,57 @@ export function ProviderForm({
       })
       .finally(() => setIsFetchingManagedModels(false));
   }, [authAccountId, canFetchManagedModels, managedProviderType, t]);
+
+  // 普通 API Key 供应商：直接向供应商端点拉取模型列表（OpenAI 兼容 /v1/models）
+  const fetchDirectModels = useCallback(
+    (targetBaseUrl: string, targetApiKey: string, isFullUrl?: boolean) => {
+      const trimmedBaseUrl = targetBaseUrl.trim();
+      const trimmedApiKey = targetApiKey.trim();
+      if (!trimmedBaseUrl || !trimmedApiKey) {
+        showFetchModelsError(null, t, {
+          hasApiKey: !!trimmedApiKey,
+          hasBaseUrl: !!trimmedBaseUrl,
+        });
+        return;
+      }
+
+      setIsFetchingManagedModels(true);
+      fetchModelsForConfig(trimmedBaseUrl, trimmedApiKey, undefined, isFullUrl)
+        .catch((err) => {
+          // Bearer 认证失败时降级为 Anthropic 原生认证（x-api-key）重试一次
+          const msg = String(err);
+          if (msg.includes("HTTP 401") || msg.includes("HTTP 403")) {
+            return fetchModelsForConfig(
+              trimmedBaseUrl,
+              trimmedApiKey,
+              "@ai-sdk/anthropic",
+              isFullUrl,
+            );
+          }
+          throw err;
+        })
+        .then((fetched) => {
+          setManagedFetchedModels(fetched);
+          if (fetched.length === 0) {
+            toast.info(t("providerForm.fetchModelsEmpty"));
+            return;
+          }
+          toast.success(
+            t("providerForm.fetchModelsSuccess", { count: fetched.length }),
+          );
+        })
+        .catch((err) => {
+          console.warn("[DirectModelFetch] Failed:", err);
+          showFetchModelsError(err, t);
+        })
+        .finally(() => setIsFetchingManagedModels(false));
+    },
+    [t],
+  );
+
+  const handleFetchClaudeDirectModels = useCallback(() => {
+    fetchDirectModels(baseUrl, apiKey);
+  }, [apiKey, baseUrl, fetchDirectModels]);
 
   const buildAuthBindingMeta = (
     currentMeta?: ProviderMeta,
@@ -1858,11 +1917,13 @@ export function ProviderForm({
             fetchedModels={managedFetchedModels}
             isFetchingModels={isFetchingManagedModels}
             onFetchModels={
-              managedProviderType ? handleFetchManagedModels : undefined
+              managedProviderType
+                ? handleFetchManagedModels
+                : handleFetchClaudeDirectModels
             }
-            canFetchModels={canFetchManagedModels}
+            canFetchModels={managedProviderType ? canFetchManagedModels : true}
             fetchModelsHint={
-              canFetchManagedModels
+              !managedProviderType || canFetchManagedModels
                 ? undefined
                 : t("providerForm.fetchModelsManagedOnly", {
                     defaultValue: "只有托管账号模式支持拉取 live models。",
@@ -2028,31 +2089,41 @@ export function ProviderForm({
                     defaultValue: "模型角色映射",
                   })}
                 </Label>
-                {managedProviderType ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleFetchManagedModels}
-                    disabled={isFetchingManagedModels || !canFetchManagedModels}
-                    className="h-7 gap-1"
-                    title={
-                      canFetchManagedModels
-                        ? undefined
-                        : t("providerForm.fetchModelsManagedOnly", {
-                            defaultValue:
-                              "只有托管账号模式支持拉取 live models。",
-                          })
-                    }
-                  >
-                    {isFetchingManagedModels ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Download className="h-3.5 w-3.5" />
-                    )}
-                    {t("providerForm.fetchModels")}
-                  </Button>
-                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={
+                    managedProviderType
+                      ? handleFetchManagedModels
+                      : () =>
+                          fetchDirectModels(
+                            claudeDesktopBaseUrl,
+                            claudeDesktopApiKey,
+                            claudeDesktopIsFullUrl,
+                          )
+                  }
+                  disabled={
+                    isFetchingManagedModels ||
+                    (Boolean(managedProviderType) && !canFetchManagedModels)
+                  }
+                  className="h-7 gap-1"
+                  title={
+                    !managedProviderType || canFetchManagedModels
+                      ? undefined
+                      : t("providerForm.fetchModelsManagedOnly", {
+                          defaultValue:
+                            "只有托管账号模式支持拉取 live models。",
+                        })
+                  }
+                >
+                  {isFetchingManagedModels ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                  {t("providerForm.fetchModels")}
+                </Button>
               </div>
               <div className="space-y-3">
                 {claudeDesktopRoutes.map((row, index) => (

@@ -455,6 +455,7 @@
     "fetchModelsEndpointNotFound": "Models endpoint not found. The provider may not expose /models, or the base URL is wrong.",
     "fetchModelsTimeout": "Request timed out. Check the endpoint and network.",
     "fetchModelsNotSupported": "Unexpected response format. The provider may not support listing models.",
+    "fetchModelsSessionExpired": "Session expired. Refresh the page and sign in again.",
     "fetchModelsFailed": "Failed to fetch models.",
     "fetchModelsUnsupportedSdk": "This SDK type does not support fetching models.",
     "advancedOptionsToggle": "Advanced Options",

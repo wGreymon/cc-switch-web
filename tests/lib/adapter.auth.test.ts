@@ -124,3 +124,89 @@ describe("adapter auth (web mode)", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("adapter CSRF auto-refresh (web mode)", () => {
+  const jsonResponse = (payload: unknown, status = 200) =>
+    ({
+      ok: status >= 200 && status < 300,
+      status,
+      headers: new Headers({ "content-type": "application/json" }),
+      json: async () => payload,
+      text: async () => JSON.stringify(payload),
+    }) as any;
+
+  const csrfError = {
+    code: "CSRF_VALIDATION_FAILED",
+    error: "CSRF token invalid or missing.",
+  };
+
+  beforeEach(() => {
+    window.sessionStorage.clear();
+  });
+
+  it("refreshWebCsrfToken stores the fetched token in sessionStorage", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(jsonResponse({ csrfToken: "fresh-token" }));
+    const { refreshWebCsrfToken, WEB_CSRF_STORAGE_KEY } =
+      await importAdapter();
+
+    await expect(refreshWebCsrfToken()).resolves.toBe(true);
+
+    expect(fetchMock.mock.calls[0]![0]).toBe("/api/system/csrf-token");
+    expect(window.sessionStorage.getItem(WEB_CSRF_STORAGE_KEY)).toBe(
+      "fresh-token",
+    );
+  });
+
+  it("refreshWebCsrfToken also updates injected auto tokens", async () => {
+    (window as any).__CC_SWITCH_TOKENS__ = { csrfToken: "stale" };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse({ csrfToken: "fresh" }),
+    );
+    const { refreshWebCsrfToken } = await importAdapter();
+
+    await refreshWebCsrfToken();
+
+    expect((window as any).__CC_SWITCH_TOKENS__.csrfToken).toBe("fresh");
+  });
+
+  it("invoke refreshes the token and retries once on CSRF_VALIDATION_FAILED", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(csrfError, 403))
+      .mockResolvedValueOnce(jsonResponse({ csrfToken: "rotated-token" }))
+      .mockResolvedValueOnce(jsonResponse(true));
+    const { invoke } = await importAdapter();
+
+    await expect(
+      invoke("add_provider", {
+        app: "claude",
+        provider: { name: "p", settingsConfig: {} },
+      }),
+    ).resolves.toBe(true);
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[1]![0]).toBe("/api/system/csrf-token");
+    const retryHeaders = (fetchMock.mock.calls[2]![1] as RequestInit)
+      .headers as Record<string, string>;
+    expect(retryHeaders["X-CSRF-Token"]).toBe("rotated-token");
+  });
+
+  it("invoke throws after a single failed CSRF retry instead of looping", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(csrfError, 403))
+      .mockResolvedValueOnce(jsonResponse({ csrfToken: "rotated-token" }))
+      .mockResolvedValueOnce(jsonResponse(csrfError, 403));
+    const { invoke } = await importAdapter();
+
+    await expect(
+      invoke("add_provider", {
+        app: "claude",
+        provider: { name: "p", settingsConfig: {} },
+      }),
+    ).rejects.toThrow("CSRF token invalid or missing.");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+});

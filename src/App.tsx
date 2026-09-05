@@ -36,6 +36,7 @@ import {
   buildWebAuthHeadersForUrl,
   buildWebApiUrl,
   isWeb,
+  refreshWebCsrfToken,
 } from "@/lib/api/adapter";
 import { AppSwitcher } from "@/components/AppSwitcher";
 import { isProviderApp } from "@/config/apps";
@@ -1027,6 +1028,9 @@ function App() {
           return;
         }
 
+        // CSRF token 随 server 进程重启轮换，凭据校验通过后刷新一次，
+        // 避免复用旧进程的 token 导致写操作 403
+        await refreshWebCsrfToken();
         setIsAuthed(true);
       } catch {
         if (!cancelled) setIsAuthed(false);

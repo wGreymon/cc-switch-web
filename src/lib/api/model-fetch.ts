@@ -80,6 +80,11 @@ export function showFetchModelsError(
   // 解析后端错误字符串
   const msg = String(err);
 
+  // cc-switch 会话的 CSRF token 失效（如 server 重启且自动刷新失败）
+  if (msg.includes("CSRF")) {
+    toast.error(t("providerForm.fetchModelsSessionExpired"));
+    return;
+  }
   if (msg.includes("HTTP 401") || msg.includes("HTTP 403")) {
     toast.error(t("providerForm.fetchModelsAuthFailed"));
     return;

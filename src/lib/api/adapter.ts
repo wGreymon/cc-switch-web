@@ -641,6 +641,43 @@ export function clearWebCredentials() {
   }
 }
 
+/**
+ * 从后端拉取当前进程的 CSRF token 并写入 sessionStorage。
+ *
+ * CSRF token 随 server 进程重启而轮换；凭据校验通过后（或收到
+ * CSRF_VALIDATION_FAILED 时）调用一次，避免沿用旧进程的 token
+ * 导致所有写操作 403。
+ */
+export async function refreshWebCsrfToken(apiBase?: string): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  try {
+    const base = apiBase ?? getWebApiBase();
+    const url = buildWebApiUrlWithBase(base, "/system/csrf-token");
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+        ...buildWebAuthHeadersForUrl(url),
+      },
+    });
+    if (!response.ok) return false;
+    const data = (await response.json()) as { csrfToken?: string | null };
+    if (data?.csrfToken) {
+      window.sessionStorage?.setItem(WEB_CSRF_STORAGE_KEY, data.csrfToken);
+      // 嵌入模式下内置 token 优先级更高，需一并更新
+      if (window.__CC_SWITCH_TOKENS__) {
+        window.__CC_SWITCH_TOKENS__.csrfToken = data.csrfToken;
+      }
+      return true;
+    }
+    window.sessionStorage?.removeItem(WEB_CSRF_STORAGE_KEY);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function commandToEndpoint(
   cmd: string,
   args: CommandArgs = {},
@@ -2041,6 +2078,7 @@ export async function invoke<T>(
 
   const canRetry = endpoint.method === "GET" || endpoint.method === "HEAD";
   const maxRetries = canRetry ? WEB_FETCH_MAX_RETRIES : 0;
+  let csrfRetried = false;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
@@ -2059,6 +2097,21 @@ export async function invoke<T>(
             errorPayload = JSON.parse(rawText);
           } catch {
             errorPayload = undefined;
+          }
+        }
+        // CSRF token 随 server 进程重启轮换：刷新一次后原地重试。
+        // 原请求已被 403 拒绝、未产生副作用，对写操作重试也是安全的。
+        if (
+          response.status === 403 &&
+          !csrfRetried &&
+          isRecord(errorPayload) &&
+          errorPayload.code === "CSRF_VALIDATION_FAILED"
+        ) {
+          csrfRetried = true;
+          if (await refreshWebCsrfToken()) {
+            Object.assign(headers, buildWebAuthHeadersForUrl(endpoint.url));
+            attempt -= 1; // 不占用网络错误的重试配额
+            continue;
           }
         }
         throw webApiError(

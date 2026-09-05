@@ -455,6 +455,7 @@
     "fetchModelsEndpointNotFound": "未找到模型列表接口，供应商可能未开放 /models，或 API 地址有误。",
     "fetchModelsTimeout": "请求超时，请检查 API 地址和网络。",
     "fetchModelsNotSupported": "响应格式异常，供应商可能不支持列出模型。",
+    "fetchModelsSessionExpired": "会话已失效，请刷新页面重新登录。",
     "fetchModelsFailed": "获取模型列表失败。",
     "fetchModelsUnsupportedSdk": "该 SDK 类型不支持获取模型列表。",
     "advancedOptionsToggle": "高级选项",

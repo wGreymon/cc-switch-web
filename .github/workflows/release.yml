@@ -310,7 +310,6 @@ jobs:
   build-web-server:
     name: Build Web Server Binary
     runs-on: ubuntu-22.04
-    needs: release  # 等待主 release 完成
     strategy:
       matrix:
         include:
@@ -504,7 +503,7 @@ jobs:
   docker-publish:
     name: Build and publish Docker image
     runs-on: ubuntu-22.04
-    needs: [release, build-web-server]
+    needs: [build-web-server]
     permissions:
       contents: read
       packages: write

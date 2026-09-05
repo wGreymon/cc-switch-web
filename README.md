@@ -4,12 +4,12 @@
 
 <sub>🙏 This project is a fork of [farion1231/cc-switch](https://github.com/farion1231/cc-switch) by Jason Young. Thanks to the original author for the excellent work. This fork adds Web Server mode for cloud/headless deployment.</sub>
 
-[![Release](https://img.shields.io/badge/Release-v0.21.0-ea7233?style=flat-square&logo=github)](https://github.com/Laliet/cc-switch-web/releases/latest)
-[![License](https://img.shields.io/github/license/Laliet/cc-switch-web?style=flat-square)](LICENSE)
-[![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)](https://github.com/Laliet/cc-switch-web/releases/latest)
-[![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/Laliet/cc-switch-web/releases/latest)
-[![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/Laliet/cc-switch-web/releases/latest)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/Laliet/cc-switch-web/pkgs/container/cc-switch-web)
+[![Release](https://img.shields.io/badge/Release-v0.21.0-ea7233?style=flat-square&logo=github)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+[![License](https://img.shields.io/github/license/wGreymon/cc-switch-web?style=flat-square)](LICENSE)
+[![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+[![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/wGreymon/cc-switch-web/pkgs/container/cc-switch-web)
 
 **Cross-platform web-based All-in-One assistant for Claude Code, Codex, Gemini CLI, OpenCode, OpenClaw & OMO**
 
@@ -93,10 +93,10 @@ Download precompiled server binary—no compilation required:
 
 | Architecture              | Download                                                                                                                           |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Linux x86_64 (glibc)**  | [cc-switch-server-linux-x86_64](https://github.com/Laliet/cc-switch-web/releases/download/v0.21.0/cc-switch-server-linux-x86_64)   |
-| **Linux aarch64 (glibc)** | [cc-switch-server-linux-aarch64](https://github.com/Laliet/cc-switch-web/releases/download/v0.21.0/cc-switch-server-linux-aarch64) |
+| **Linux x86_64 (glibc)**  | [cc-switch-server-linux-x86_64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-x86_64)   |
+| **Linux aarch64 (glibc)** | [cc-switch-server-linux-aarch64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-aarch64) |
 
-Release page: [v0.21.0 downloads](https://github.com/Laliet/cc-switch-web/releases/tag/v0.21.0)
+Release page: [v0.21.0 downloads](https://github.com/wGreymon/cc-switch-web/releases/tag/v0.21.0)
 
 > **Note (glibc)**: Binaries are built on Ubuntu 22.04 (glibc baseline).  
 > If you see `GLIBC_2.xx not found`, use Docker or build from source.  
@@ -105,23 +105,23 @@ Release page: [v0.21.0 downloads](https://github.com/Laliet/cc-switch-web/releas
 **One-Line Deploy**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
+curl -fsSL https://raw.githubusercontent.com/wGreymon/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
 ```
 
 **Quick fixes**:
 
-- `GLIBC_2.xx not found`: use Docker (`ghcr.io/laliet/cc-switch-web:latest`) or build from source.
-- Need container-first deployment: run `docker run -p 3000:3000 ghcr.io/laliet/cc-switch-web:latest`.
+- `GLIBC_2.xx not found`: use Docker (`ghcr.io/wgreymon/cc-switch-web:latest`) or build from source.
+- Need container-first deployment: run `docker run -p 3000:3000 ghcr.io/wgreymon/cc-switch-web:latest`.
 - Windows + WSL shared configs: Settings now provides a one-click WSL template path filler in Advanced tab.
 
 **Advanced options**:
 
 ```bash
 # Custom install directory and port
-INSTALL_DIR=/opt/cc-switch PORT=8080 curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
+INSTALL_DIR=/opt/cc-switch PORT=8080 curl -fsSL https://raw.githubusercontent.com/wGreymon/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
 
 # Create systemd service for auto-start
-CREATE_SERVICE=1 curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
+CREATE_SERVICE=1 curl -fsSL https://raw.githubusercontent.com/wGreymon/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
 ```
 
 #### Method B: Docker Container
@@ -129,10 +129,10 @@ CREATE_SERVICE=1 curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-w
 Docker image published to GitHub Container Registry (ghcr.io):
 
 ```bash
-docker run -p 3000:3000 ghcr.io/laliet/cc-switch-web:latest
+docker run -p 3000:3000 ghcr.io/wgreymon/cc-switch-web:latest
 ```
 
-> ⚠️ **Note**: Docker image name must be **lowercase** (`laliet`, not `Laliet`)
+> ⚠️ **Note**: Docker image name must be **lowercase** (`wgreymon`, not `wGreymon`)
 
 **Advanced Docker options**:
 
@@ -151,7 +151,7 @@ Dependencies: `libssl-dev`, `pkg-config`, Rust 1.78+, pnpm (no WebKit/GTK needed
 
 ```bash
 # 1. Clone and install dependencies
-git clone https://github.com/Laliet/cc-switch-web.git
+git clone https://github.com/wGreymon/cc-switch-web.git
 cd cc-switch-web
 pnpm install
 
@@ -366,7 +366,7 @@ pnpm test:unit
 
 ## What's New
 
-> Current release: [v0.21.0](https://github.com/Laliet/cc-switch-web/releases/tag/v0.21.0)<br>
+> Current release: [v0.21.0](https://github.com/wGreymon/cc-switch-web/releases/tag/v0.21.0)<br>
 > `v0.21.0` completes OpenClaw phase two, global Session search, installed-Skills discovery, and Provider routing visibility.
 
 ### v0.21.0 - OpenClaw Phase Two

@@ -4,12 +4,12 @@
 
 <sub>🙏 本项目是 [farion1231/cc-switch](https://github.com/farion1231/cc-switch)（Jason Young）的 fork 版本。感谢原作者的出色工作。本 fork 添加了 Web 服务器模式，支持云端/无头部署。</sub>
 
-[![Release](https://img.shields.io/badge/Release-v0.21.0-ea7233?style=flat-square&logo=github)](https://github.com/Laliet/cc-switch-web/releases/latest)
-[![License](https://img.shields.io/github/license/Laliet/cc-switch-web?style=flat-square)](LICENSE)
-[![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)](https://github.com/Laliet/cc-switch-web/releases/latest)
-[![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/Laliet/cc-switch-web/releases/latest)
-[![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/Laliet/cc-switch-web/releases/latest)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/Laliet/cc-switch-web/pkgs/container/cc-switch-web)
+[![Release](https://img.shields.io/badge/Release-v0.21.0-ea7233?style=flat-square&logo=github)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+[![License](https://img.shields.io/github/license/wGreymon/cc-switch-web?style=flat-square)](LICENSE)
+[![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+[![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/wGreymon/cc-switch-web/pkgs/container/cc-switch-web)
 
 **面向 Claude Code / Codex / Gemini CLI / OpenCode / OpenClaw / OMO 的跨平台 Web 版一站式助手**
 
@@ -89,10 +89,10 @@
 
 | 架构                      | 下载链接                                                                                                                           |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Linux x86_64 (glibc)**  | [cc-switch-server-linux-x86_64](https://github.com/Laliet/cc-switch-web/releases/download/v0.21.0/cc-switch-server-linux-x86_64)   |
-| **Linux aarch64 (glibc)** | [cc-switch-server-linux-aarch64](https://github.com/Laliet/cc-switch-web/releases/download/v0.21.0/cc-switch-server-linux-aarch64) |
+| **Linux x86_64 (glibc)**  | [cc-switch-server-linux-x86_64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-x86_64)   |
+| **Linux aarch64 (glibc)** | [cc-switch-server-linux-aarch64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-aarch64) |
 
-发布页：[v0.21.0 下载](https://github.com/Laliet/cc-switch-web/releases/tag/v0.21.0)
+发布页：[v0.21.0 下载](https://github.com/wGreymon/cc-switch-web/releases/tag/v0.21.0)
 
 > **glibc 说明**：预编译二进制基于 Ubuntu 22.04 构建。  
 > 如果报 `GLIBC_2.xx not found`，请改用 Docker 或源码构建。  
@@ -101,23 +101,23 @@
 **一键部署**：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
+curl -fsSL https://raw.githubusercontent.com/wGreymon/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
 ```
 
 **常见问题速查**：
 
-- 报 `GLIBC_2.xx not found`：建议使用 Docker（`ghcr.io/laliet/cc-switch-web:latest`）或源码构建。
-- 想直接容器化运行：使用 `docker run -p 3000:3000 ghcr.io/laliet/cc-switch-web:latest`。
+- 报 `GLIBC_2.xx not found`：建议使用 Docker（`ghcr.io/wgreymon/cc-switch-web:latest`）或源码构建。
+- 想直接容器化运行：使用 `docker run -p 3000:3000 ghcr.io/wgreymon/cc-switch-web:latest`。
 - Windows + WSL 共用配置：设置页支持一键填充 WSL 模板路径（高级设置页中的“填充 WSL 模板路径”）。
 
 **高级选项**：
 
 ```bash
 # 自定义安装目录和端口
-INSTALL_DIR=/opt/cc-switch PORT=8080 curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
+INSTALL_DIR=/opt/cc-switch PORT=8080 curl -fsSL https://raw.githubusercontent.com/wGreymon/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
 
 # 创建 systemd 服务（开机自启）
-CREATE_SERVICE=1 curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
+CREATE_SERVICE=1 curl -fsSL https://raw.githubusercontent.com/wGreymon/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
 ```
 
 #### 方法 B：Docker 容器
@@ -125,10 +125,10 @@ CREATE_SERVICE=1 curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-w
 Docker 镜像发布到 GitHub Container Registry (ghcr.io)：
 
 ```bash
-docker run -p 3000:3000 ghcr.io/laliet/cc-switch-web:latest
+docker run -p 3000:3000 ghcr.io/wgreymon/cc-switch-web:latest
 ```
 
-> ⚠️ **注意**：Docker 镜像名必须**全小写**（`laliet`，不是 `Laliet`）
+> ⚠️ **注意**：Docker 镜像名必须**全小写**（`wgreymon`，不是 `wGreymon`）
 
 **Docker 高级选项**：
 
@@ -147,7 +147,7 @@ docker run -p 3000:3000 cc-switch-web
 
 ```bash
 # 1. 克隆并安装依赖
-git clone https://github.com/Laliet/cc-switch-web.git
+git clone https://github.com/wGreymon/cc-switch-web.git
 cd cc-switch-web
 pnpm install
 
@@ -361,7 +361,7 @@ pnpm test:unit
 
 ## 更新内容
 
-> 当前版本：[v0.21.0](https://github.com/Laliet/cc-switch-web/releases/tag/v0.21.0)<br>
+> 当前版本：[v0.21.0](https://github.com/wGreymon/cc-switch-web/releases/tag/v0.21.0)<br>
 > `v0.21.0` 完成 OpenClaw 第二阶段、全局 Session 搜索、已安装 Skills 发现和 Provider 路由状态展示。
 
 ### v0.21.0 - OpenClaw 第二阶段

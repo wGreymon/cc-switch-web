@@ -32,7 +32,7 @@ Web 模式不提供原生文件/目录选择器、系统托盘、应用更新、
 当前稳定版为 v0.20.0。可从 Release 页面下载对应架构的 `cc-switch-server-linux-*`，或运行：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
+curl -fsSL https://raw.githubusercontent.com/wGreymon/cc-switch-web/main/scripts/deploy-web.sh | bash -s -- --prebuilt
 ```
 
 预编译 GNU 版本以 Ubuntu 22.04 为基线。遇到 glibc 不兼容时优先使用 Docker、musl 变体或源码构建。
@@ -43,7 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/d
 docker run --name cc-switch-web \
   -p 127.0.0.1:3000:3000 \
   -v cc-switch-data:/root/.cc-switch \
-  ghcr.io/laliet/cc-switch-web:latest
+  ghcr.io/wgreymon/cc-switch-web:latest
 ```
 
 需要管理服务器主机上的 Claude/Codex/Gemini/OpenCode/OpenClaw 配置时，还应把相应配置目录挂载到容器中。挂载路径决定 Web UI 实际管理的数据；不要把宿主机根目录整体暴露给容器。
@@ -53,7 +53,7 @@ docker run --name cc-switch-web \
 依赖：Rust、Node.js、pnpm、`pkg-config` 和 OpenSSL 开发包。纯 Web 构建不需要 Tauri 的 WebKit/GTK 桌面依赖。
 
 ```bash
-git clone https://github.com/Laliet/cc-switch-web.git
+git clone https://github.com/wGreymon/cc-switch-web.git
 cd cc-switch-web
 pnpm install
 pnpm build:web

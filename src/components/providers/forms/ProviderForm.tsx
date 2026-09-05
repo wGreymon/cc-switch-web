@@ -27,6 +27,7 @@ import {
   type FetchedModel,
 } from "@/lib/api/model-fetch";
 import type {
+  ClaudeApiKeyField,
   ClaudeDesktopMode,
   ClaudeDesktopModelRoute,
   ProviderCategory,
@@ -424,6 +425,19 @@ function baseUrlFromConfig(config: string) {
   }
 }
 
+// 没有 meta.apiKeyField 时（旧数据/预设），按 env 里实际存在的键推断认证字段
+function inferClaudeApiKeyField(
+  settingsConfig: Record<string, unknown> | undefined,
+): ClaudeApiKeyField {
+  const env = settingsConfig?.env;
+  if (env && typeof env === "object") {
+    if ((env as Record<string, unknown>).ANTHROPIC_API_KEY !== undefined) {
+      return "ANTHROPIC_API_KEY";
+    }
+  }
+  return "ANTHROPIC_AUTH_TOKEN";
+}
+
 interface ProviderFormProps {
   appId: AppId;
   providerId?: string;
@@ -476,6 +490,15 @@ export function ProviderForm({
     initialData?.meta?.apiKeyField ?? "ANTHROPIC_AUTH_TOKEN",
   );
   const [claudeDesktopIsFullUrl, setClaudeDesktopIsFullUrl] = useState(
+    initialData?.meta?.isFullUrl ?? false,
+  );
+  // Claude Code（appId === "claude"）的认证字段与完整 URL 开关
+  const [claudeApiKeyField, setClaudeApiKeyField] = useState<ClaudeApiKeyField>(
+    () =>
+      (initialData?.meta?.apiKeyField as ClaudeApiKeyField | undefined) ??
+      inferClaudeApiKeyField(initialData?.settingsConfig),
+  );
+  const [claudeIsFullUrl, setClaudeIsFullUrl] = useState(
     initialData?.meta?.isFullUrl ?? false,
   );
   const [claudeDesktopBaseUrl, setClaudeDesktopBaseUrl] = useState("");
@@ -564,6 +587,13 @@ export function ProviderForm({
       setClaudeDesktopBaseUrl(baseUrlFromConfig(nextConfig));
       setClaudeDesktopApiKey(apiKeyFromConfig(nextConfig, nextField));
       setClaudeDesktopRoutes(routeRowsFromMeta(initialData?.meta));
+    }
+    if (appId === "claude") {
+      setClaudeApiKeyField(
+        (initialData?.meta?.apiKeyField as ClaudeApiKeyField | undefined) ??
+          inferClaudeApiKeyField(initialData?.settingsConfig),
+      );
+      setClaudeIsFullUrl(initialData?.meta?.isFullUrl ?? false);
     }
     setAuthMode(
       authModeFromMeta(initialData?.meta, initialData?.settingsConfig),
@@ -655,6 +685,7 @@ export function ProviderForm({
     selectedPresetId,
     category,
     appType: appId,
+    apiKeyField: appId === "claude" ? claudeApiKeyField : undefined,
   });
   const shouldShowApiKeyField = useMemo(
     () => shouldShowApiKey(settingsConfigValue, isEditMode),
@@ -673,17 +704,45 @@ export function ProviderForm({
     },
   });
 
-  // 使用 Model hook（新：主模型 + Haiku/Sonnet/Opus 默认模型）
+  // 使用 Model hook（兜底模型 + Sonnet/Opus/Fable/Haiku/Subagent 角色映射及显示名）
   const {
     claudeModel,
     defaultHaikuModel,
+    defaultHaikuModelName,
     defaultSonnetModel,
+    defaultSonnetModelName,
     defaultOpusModel,
+    defaultOpusModelName,
+    defaultFableModel,
+    defaultFableModelName,
+    subagentModel,
     handleModelChange,
   } = useModelState({
     settingsConfig: settingsConfigValue,
     onConfigChange: (config) => form.setValue("settingsConfig", config),
   });
+
+  // 切换认证字段：把 env 里已有的键改名，值原样保留
+  const handleClaudeApiKeyFieldChange = useCallback(
+    (field: ClaudeApiKeyField) => {
+      const prev = claudeApiKeyField;
+      setClaudeApiKeyField(field);
+      if (prev === field) return;
+
+      try {
+        const config = JSON.parse(form.getValues("settingsConfig") || "{}");
+        const env = config?.env;
+        if (env && typeof env === "object" && prev in env) {
+          env[field] = env[prev];
+          delete env[prev];
+          form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+        }
+      } catch {
+        // 用户正在手改 JSON 时可能暂时不可解析，忽略
+      }
+    },
+    [claudeApiKeyField, form],
+  );
 
   // 使用 Codex 配置 hook (仅 Codex 模式)
   const {
@@ -1111,8 +1170,8 @@ export function ProviderForm({
   );
 
   const handleFetchClaudeDirectModels = useCallback(() => {
-    fetchDirectModels(baseUrl, apiKey);
-  }, [apiKey, baseUrl, fetchDirectModels]);
+    fetchDirectModels(baseUrl, apiKey, claudeIsFullUrl);
+  }, [apiKey, baseUrl, claudeIsFullUrl, fetchDirectModels]);
 
   const buildAuthBindingMeta = (
     currentMeta?: ProviderMeta,
@@ -1374,6 +1433,25 @@ export function ProviderForm({
     if (isOmoApp && !payload.presetCategory) {
       payload.presetCategory = appId;
     }
+    if (appId === "claude" && category !== "official") {
+      const nextMeta: ProviderMeta = {
+        ...(initialData?.meta ?? {}),
+        ...(payload.meta ?? {}),
+      };
+      // 默认值不落盘，保持 meta 精简
+      if (claudeApiKeyField === "ANTHROPIC_AUTH_TOKEN") {
+        delete nextMeta.apiKeyField;
+      } else {
+        nextMeta.apiKeyField = claudeApiKeyField;
+      }
+      if (claudeIsFullUrl) {
+        nextMeta.isFullUrl = true;
+      } else {
+        delete nextMeta.isFullUrl;
+      }
+      payload.meta = nextMeta;
+    }
+
     if (appId === "claude-desktop") {
       payload.meta = {
         ...(initialData?.meta ?? {}),
@@ -1415,10 +1493,12 @@ export function ProviderForm({
       const needsClearEndpoints =
         hadEndpoints && draftCustomEndpoints.length === 0;
 
+      // 以上面已经拼好的 payload.meta 为基准，避免覆盖 apiKeyField / isFullUrl 等字段
+      const metaBase = payload.meta ?? initialData?.meta;
       // 如果用户明确清空了端点，传递空对象（而不是 null）让后端知道要删除
       let mergedMeta = needsClearEndpoints
-        ? mergeProviderMeta(initialData?.meta, {})
-        : mergeProviderMeta(initialData?.meta, customEndpointsToSave);
+        ? mergeProviderMeta(metaBase, {})
+        : mergeProviderMeta(metaBase, customEndpointsToSave);
 
       // 添加合作伙伴标识与促销 key
       if (activePreset?.isPartner) {
@@ -1691,6 +1771,11 @@ export function ProviderForm({
       preset.templateValues,
     );
 
+    if (appId === "claude") {
+      setClaudeApiKeyField(inferClaudeApiKeyField(config));
+      setClaudeIsFullUrl(false);
+    }
+
     form.reset({
       name: preset.name,
       websiteUrl: preset.websiteUrl ?? "",
@@ -1900,6 +1985,7 @@ export function ProviderForm({
             templateValues={templateValues}
             templatePresetName={templatePreset?.name || ""}
             onTemplateValueChange={handleTemplateValueChange}
+            shouldShowEndpoint={category !== "official"}
             shouldShowSpeedTest={shouldShowSpeedTest}
             baseUrl={baseUrl}
             onBaseUrlChange={handleClaudeBaseUrlChange}
@@ -1908,11 +1994,21 @@ export function ProviderForm({
             onCustomEndpointsChange={
               isEditMode ? undefined : setDraftCustomEndpoints
             }
+            isFullUrl={claudeIsFullUrl}
+            onFullUrlChange={setClaudeIsFullUrl}
+            apiKeyField={claudeApiKeyField}
+            onApiKeyFieldChange={handleClaudeApiKeyFieldChange}
             shouldShowModelSelector={category !== "official"}
             claudeModel={claudeModel}
             defaultHaikuModel={defaultHaikuModel}
+            defaultHaikuModelName={defaultHaikuModelName}
             defaultSonnetModel={defaultSonnetModel}
+            defaultSonnetModelName={defaultSonnetModelName}
             defaultOpusModel={defaultOpusModel}
+            defaultOpusModelName={defaultOpusModelName}
+            defaultFableModel={defaultFableModel}
+            defaultFableModelName={defaultFableModelName}
+            subagentModel={subagentModel}
             onModelChange={handleModelChange}
             fetchedModels={managedFetchedModels}
             isFetchingModels={isFetchingManagedModels}

@@ -99,6 +99,9 @@ export interface ProviderAuthBinding {
   useDefault?: boolean;
 }
 
+// Claude 认证环境变量字段名
+export type ClaudeApiKeyField = "ANTHROPIC_AUTH_TOKEN" | "ANTHROPIC_API_KEY";
+
 // 供应商元数据（字段名与后端一致，保持 snake_case）
 export interface ProviderMeta {
   // 自定义端点：以 URL 为键，值为端点信息

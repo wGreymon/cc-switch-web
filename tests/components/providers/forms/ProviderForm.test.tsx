@@ -31,9 +31,12 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: tMock }),
 }));
 
+// 可变：部分用例需要模拟 Web 模式（endpoint_test: false）
+const capabilitiesMock = vi.hoisted(() => ({ endpointTest: true }));
+
 vi.mock("@/lib/query", () => ({
   useCapabilitiesQuery: () => ({
-    data: { features: { endpointTest: true } },
+    data: { features: { endpointTest: capabilitiesMock.endpointTest } },
   }),
 }));
 
@@ -91,7 +94,16 @@ vi.mock("@/components/providers/forms/BasicFormFields", () => ({
 }));
 
 vi.mock("@/components/providers/forms/ClaudeFormFields", () => ({
-  ClaudeFormFields: ({ canFetchModels, fetchedModels, onFetchModels }: any) => (
+  ClaudeFormFields: ({
+    canFetchModels,
+    fetchedModels,
+    onFetchModels,
+    shouldShowEndpoint,
+    shouldShowSpeedTest,
+    apiKeyField,
+    onApiKeyFieldChange,
+    onFullUrlChange,
+  }: any) => (
     <div data-testid="claude-fields">
       <button
         disabled={!canFetchModels}
@@ -101,6 +113,22 @@ vi.mock("@/components/providers/forms/ClaudeFormFields", () => ({
         Fetch Claude Models
       </button>
       <span data-testid="claude-model-count">{fetchedModels?.length ?? 0}</span>
+      <span data-testid="claude-show-endpoint">
+        {String(shouldShowEndpoint)}
+      </span>
+      <span data-testid="claude-show-speed-test">
+        {String(shouldShowSpeedTest)}
+      </span>
+      <span data-testid="claude-api-key-field">{apiKeyField}</span>
+      <button
+        type="button"
+        onClick={() => onApiKeyFieldChange?.("ANTHROPIC_API_KEY")}
+      >
+        Use ANTHROPIC_API_KEY
+      </button>
+      <button type="button" onClick={() => onFullUrlChange?.(true)}>
+        Enable Full URL
+      </button>
     </div>
   ),
 }));
@@ -375,6 +403,7 @@ const defaultProps = {
 };
 
 beforeEach(() => {
+  capabilitiesMock.endpointTest = true;
   tMock.mockClear();
   defaultProps.onSubmit.mockClear();
   defaultProps.onCancel.mockClear();
@@ -593,6 +622,140 @@ describe("ProviderForm", () => {
 
     const submittedData = onSubmit.mock.calls[0][0];
     expect(submittedData.name).toBe("New Provider");
+  });
+
+  it("keeps the Claude endpoint field available when the runtime has no speed test", () => {
+    // 回归用例：Web 模式（endpoint_test: false）下请求地址输入框必须仍然渲染，
+    // 只有"管理和测速"入口跟随运行时能力隐藏
+    capabilitiesMock.endpointTest = false;
+
+    render(<ProviderForm {...defaultProps} />);
+
+    expect(screen.getByTestId("claude-show-endpoint")).toHaveTextContent(
+      "true",
+    );
+    expect(screen.getByTestId("claude-show-speed-test")).toHaveTextContent(
+      "false",
+    );
+  });
+
+  it("renames the Claude auth env key and persists meta.apiKeyField", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+
+    render(
+      <ProviderForm
+        {...defaultProps}
+        onSubmit={onSubmit}
+        initialData={{
+          name: "Third Party",
+          settingsConfig: {
+            env: {
+              ANTHROPIC_BASE_URL: "https://api.example.com",
+              ANTHROPIC_AUTH_TOKEN: "sk-existing",
+            },
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("claude-api-key-field")).toHaveTextContent(
+      "ANTHROPIC_AUTH_TOKEN",
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Use ANTHROPIC_API_KEY" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+
+    const submittedData = onSubmit.mock.calls[0][0];
+    const settingsConfig = JSON.parse(submittedData.settingsConfig);
+    // 只改键名，值原样保留
+    expect(settingsConfig.env.ANTHROPIC_API_KEY).toBe("sk-existing");
+    expect(settingsConfig.env).not.toHaveProperty("ANTHROPIC_AUTH_TOKEN");
+    expect(submittedData.meta).toMatchObject({
+      apiKeyField: "ANTHROPIC_API_KEY",
+    });
+  });
+
+  it("infers the Claude auth field from the existing env key", () => {
+    render(
+      <ProviderForm
+        {...defaultProps}
+        initialData={{
+          name: "Legacy",
+          settingsConfig: {
+            env: { ANTHROPIC_API_KEY: "sk-legacy" },
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("claude-api-key-field")).toHaveTextContent(
+      "ANTHROPIC_API_KEY",
+    );
+  });
+
+  it("persists meta.isFullUrl for Claude providers", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+
+    render(
+      <ProviderForm
+        {...defaultProps}
+        onSubmit={onSubmit}
+        initialData={{
+          name: "Third Party",
+          settingsConfig: {
+            env: {
+              ANTHROPIC_BASE_URL: "https://api.example.com",
+              ANTHROPIC_AUTH_TOKEN: "sk-existing",
+            },
+          },
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Enable Full URL" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+
+    expect(onSubmit.mock.calls[0][0].meta).toMatchObject({ isFullUrl: true });
+  });
+
+  it("omits default Claude auth and full URL values from meta", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+
+    render(
+      <ProviderForm
+        {...defaultProps}
+        onSubmit={onSubmit}
+        initialData={{
+          name: "Third Party",
+          settingsConfig: {
+            env: {
+              ANTHROPIC_BASE_URL: "https://api.example.com",
+              ANTHROPIC_AUTH_TOKEN: "sk-existing",
+            },
+          },
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+    });
+
+    const meta = onSubmit.mock.calls[0][0].meta ?? {};
+    expect(meta).not.toHaveProperty("apiKeyField");
+    expect(meta).not.toHaveProperty("isFullUrl");
   });
 
   it("preserves managed auth binding when editing an OAuth provider", async () => {

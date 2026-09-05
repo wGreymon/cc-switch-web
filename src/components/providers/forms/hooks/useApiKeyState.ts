@@ -12,6 +12,8 @@ interface UseApiKeyStateProps {
   selectedPresetId: string | null;
   category?: ProviderCategory;
   appType?: string;
+  /** Claude：新建字段时使用的认证环境变量名（默认 ANTHROPIC_AUTH_TOKEN） */
+  apiKeyField?: string;
 }
 
 /**
@@ -24,6 +26,7 @@ export function useApiKeyState({
   selectedPresetId,
   category,
   appType,
+  apiKeyField,
 }: UseApiKeyStateProps) {
   const [apiKey, setApiKey] = useState(() => {
     if (initialConfig) {
@@ -50,12 +53,20 @@ export function useApiKeyState({
             category !== undefined &&
             category !== "official",
           appType,
+          apiKeyField,
         },
       );
 
       onConfigChange(configString);
     },
-    [initialConfig, selectedPresetId, category, appType, onConfigChange],
+    [
+      initialConfig,
+      selectedPresetId,
+      category,
+      appType,
+      apiKeyField,
+      onConfigChange,
+    ],
   );
 
   const showApiKey = useCallback(

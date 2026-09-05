@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # CC Switch Linux installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/Laliet/cc-switch-web/main/scripts/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/wGreymon/cc-switch-web/main/scripts/install.sh | bash
 
 set -euo pipefail
 
-REPO="${REPO:-Laliet/cc-switch-web}"
+REPO="${REPO:-wGreymon/cc-switch-web}"
 VERSION="${VERSION:-latest}"
 ARCH="${ARCH:-$(uname -m)}"
 NO_CHECKSUM="${NO_CHECKSUM:-0}"

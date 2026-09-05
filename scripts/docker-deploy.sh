@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cc-switch-web Docker 一键部署脚本
-# 镜像：ghcr.io/laliet/cc-switch-web
+# 镜像：ghcr.io/wgreymon/cc-switch-web
 # 选项：
 #   -p, --port      指定端口（默认 3000）
 #   -d, --detach    后台运行
@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-IMAGE="ghcr.io/laliet/cc-switch-web"
+IMAGE="ghcr.io/wgreymon/cc-switch-web"
 CONTAINER_NAME="cc-switch-web"
 
 PORT=3000

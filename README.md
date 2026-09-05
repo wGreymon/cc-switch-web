@@ -4,7 +4,16 @@
 
 <sub>🙏 This project is a fork of [farion1231/cc-switch](https://github.com/farion1231/cc-switch) by Jason Young. Thanks to the original author for the excellent work. This fork adds Web Server mode for cloud/headless deployment.</sub>
 
-[![Release](https://img.shields.io/badge/Release-v0.21.0-ea7233?style=flat-square&logo=github)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+> **⚠️ Modified fork notice**: This repository (wGreymon/cc-switch-web) is a **modified fork** of [Laliet/cc-switch-web](https://github.com/Laliet/cc-switch-web), not the official upstream. Changes on top of upstream:
+>
+> - "Fetch models" for plain API-key Claude providers (enter Base URL + Key to list and pick models)
+> - Web mode auto-refreshes the CSRF token across server restarts (fixes 403-on-write after restart)
+> - Releases include macOS server binaries (arm64 / x86_64); the one-line deploy script supports macOS
+> - Web release channels (server binaries, Docker image, deploy script) point to this repository; **desktop installers still come from upstream**
+>
+> Version tags use `v<upstream-baseline>-wgreymon.<iteration>` (e.g. `v0.21.2-wgreymon.1`) to distinguish from upstream releases.
+
+[![Release](https://img.shields.io/github/v/release/wGreymon/cc-switch-web?style=flat-square&logo=github&color=ea7233)](https://github.com/wGreymon/cc-switch-web/releases/latest)
 [![License](https://img.shields.io/github/license/wGreymon/cc-switch-web?style=flat-square)](LICENSE)
 [![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)](https://github.com/wGreymon/cc-switch-web/releases/latest)
 [![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/wGreymon/cc-switch-web/releases/latest)
@@ -91,16 +100,21 @@ Lightweight web server for headless environments. Access via browser, no GUI dep
 
 Download precompiled server binary—no compilation required:
 
-| Architecture              | Download                                                                                                                           |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Linux x86_64 (glibc)**  | [cc-switch-server-linux-x86_64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-x86_64)   |
-| **Linux aarch64 (glibc)** | [cc-switch-server-linux-aarch64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-aarch64) |
+| Architecture                    | Download                                                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Linux x86_64 (glibc)**        | [cc-switch-server-linux-x86_64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-x86_64)     |
+| **Linux aarch64 (glibc)**       | [cc-switch-server-linux-aarch64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-aarch64)   |
+| **macOS Apple Silicon (arm64)** | [cc-switch-server-darwin-aarch64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-darwin-aarch64) |
+| **macOS Intel (x86_64)**        | [cc-switch-server-darwin-x86_64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-darwin-x86_64)   |
 
-Release page: [v0.21.0 downloads](https://github.com/wGreymon/cc-switch-web/releases/tag/v0.21.0)
+Release page: [latest downloads](https://github.com/wGreymon/cc-switch-web/releases/latest)
 
-> **Note (glibc)**: Binaries are built on Ubuntu 22.04 (glibc baseline).  
+> **Note (glibc)**: Linux binaries are built on Ubuntu 22.04 (glibc baseline).  
 > If you see `GLIBC_2.xx not found`, use Docker or build from source.  
 > Check your glibc with `ldd --version`.
+
+> **Note (macOS)**: The one-line deploy script detects macOS and downloads the darwin binary automatically.  
+> If you download manually via a browser, clear the quarantine flag first: `xattr -d com.apple.quarantine ./cc-switch-server-darwin-*`
 
 **One-Line Deploy**:
 
@@ -133,6 +147,10 @@ docker run -p 3000:3000 ghcr.io/wgreymon/cc-switch-web:latest
 ```
 
 > ⚠️ **Note**: Docker image name must be **lowercase** (`wgreymon`, not `wGreymon`)
+
+> **macOS**: The image is multi-arch (amd64 + arm64) and runs natively under Docker Desktop / OrbStack.  
+> To let provider switching write to your Mac's local CLI configs, mount them, e.g.:  
+> `docker run -p 3000:3000 -v ~/.cc-switch:/root/.cc-switch -v ~/.claude:/root/.claude ghcr.io/wgreymon/cc-switch-web:latest`
 
 **Advanced Docker options**:
 
@@ -366,7 +384,7 @@ pnpm test:unit
 
 ## What's New
 
-> Current release: [v0.21.0](https://github.com/wGreymon/cc-switch-web/releases/tag/v0.21.0)<br>
+> Current release: [latest release](https://github.com/wGreymon/cc-switch-web/releases/latest)<br>
 > `v0.21.0` completes OpenClaw phase two, global Session search, installed-Skills discovery, and Provider routing visibility.
 
 ### v0.21.0 - OpenClaw Phase Two

@@ -235,6 +235,22 @@ download_prebuilt() {
   esac
 
   local target_path="$INSTALL_DIR/src-tauri/target/release/examples/server"
+
+  # macOS：直接下载 darwin 预编译（无 libc 变体之分）
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    local darwin_url="https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-darwin-${arch}"
+    mkdir -p "$(dirname "$target_path")"
+    log "下载 macOS 预编译: $darwin_url"
+    if ! curl -fL "$darwin_url" -o "$target_path"; then
+      err "预编译二进制下载失败：$darwin_url"
+      err "建议改用 Docker（ghcr.io/wgreymon/cc-switch-web:latest）或源码构建（不加 --prebuilt）。"
+      exit 1
+    fi
+    chmod +x "$target_path"
+    success "预编译服务器已下载(darwin): $target_path"
+    return 0
+  fi
+
   local glibc_version
   local requested_variant="${LIBC_VARIANT:-auto}"
   local chosen_variant=""
@@ -322,6 +338,11 @@ download_prebuilt() {
 # 创建 systemd 服务（可选）
 create_systemd_service() {
   if [[ "${CREATE_SERVICE:-0}" != "1" ]]; then
+    return 0
+  fi
+
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    warn "macOS 不支持 systemd，跳过服务创建（可手动运行 start-web.sh，或自行配置 launchd）。"
     return 0
   fi
 

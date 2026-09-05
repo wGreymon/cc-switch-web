@@ -4,7 +4,16 @@
 
 <sub>🙏 本项目是 [farion1231/cc-switch](https://github.com/farion1231/cc-switch)（Jason Young）的 fork 版本。感谢原作者的出色工作。本 fork 添加了 Web 服务器模式，支持云端/无头部署。</sub>
 
-[![Release](https://img.shields.io/badge/Release-v0.21.0-ea7233?style=flat-square&logo=github)](https://github.com/wGreymon/cc-switch-web/releases/latest)
+> **⚠️ Fork 改动版说明**：本仓库（wGreymon/cc-switch-web）是 [Laliet/cc-switch-web](https://github.com/Laliet/cc-switch-web) 的**改动版 fork**，非官方原版。在上游基础上主要改动：
+>
+> - Claude 普通 API Key 供应商支持"获取模型列表"（填入 Base URL + Key 即可拉取并选择模型）
+> - Web 模式 CSRF token 随服务重启自动刷新（修复重启后写操作 403 报"获取失败"的问题）
+> - Release 增加 macOS server 预编译二进制（arm64 / x86_64），一键部署脚本支持 macOS
+> - Web 相关发布渠道（server 二进制、Docker 镜像、部署脚本）指向本仓库；**桌面端安装包仍来自上游**
+>
+> 版本 tag 采用 `v<上游基线>-wgreymon.<迭代号>` 命名（如 `v0.21.2-wgreymon.1`）以与原版区分。
+
+[![Release](https://img.shields.io/github/v/release/wGreymon/cc-switch-web?style=flat-square&logo=github&color=ea7233)](https://github.com/wGreymon/cc-switch-web/releases/latest)
 [![License](https://img.shields.io/github/license/wGreymon/cc-switch-web?style=flat-square)](LICENSE)
 [![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)](https://github.com/wGreymon/cc-switch-web/releases/latest)
 [![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/wGreymon/cc-switch-web/releases/latest)
@@ -87,16 +96,21 @@
 
 下载预编译的服务器二进制，无需编译：
 
-| 架构                      | 下载链接                                                                                                                           |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Linux x86_64 (glibc)**  | [cc-switch-server-linux-x86_64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-x86_64)   |
-| **Linux aarch64 (glibc)** | [cc-switch-server-linux-aarch64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-aarch64) |
+| 架构                              | 下载链接                                                                                                                             |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Linux x86_64 (glibc)**          | [cc-switch-server-linux-x86_64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-x86_64)     |
+| **Linux aarch64 (glibc)**         | [cc-switch-server-linux-aarch64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-linux-aarch64)   |
+| **macOS Apple Silicon (arm64)**   | [cc-switch-server-darwin-aarch64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-darwin-aarch64) |
+| **macOS Intel (x86_64)**          | [cc-switch-server-darwin-x86_64](https://github.com/wGreymon/cc-switch-web/releases/latest/download/cc-switch-server-darwin-x86_64)   |
 
-发布页：[v0.21.0 下载](https://github.com/wGreymon/cc-switch-web/releases/tag/v0.21.0)
+发布页：[最新版下载](https://github.com/wGreymon/cc-switch-web/releases/latest)
 
-> **glibc 说明**：预编译二进制基于 Ubuntu 22.04 构建。  
+> **glibc 说明**：Linux 预编译二进制基于 Ubuntu 22.04 构建。  
 > 如果报 `GLIBC_2.xx not found`，请改用 Docker 或源码构建。  
 > 可用 `ldd --version` 查看 glibc 版本。
+
+> **macOS 说明**：一键部署脚本会自动识别 macOS 并下载 darwin 二进制。  
+> 若通过浏览器手动下载，首次运行前需移除隔离属性：`xattr -d com.apple.quarantine ./cc-switch-server-darwin-*`
 
 **一键部署**：
 
@@ -129,6 +143,10 @@ docker run -p 3000:3000 ghcr.io/wgreymon/cc-switch-web:latest
 ```
 
 > ⚠️ **注意**：Docker 镜像名必须**全小写**（`wgreymon`，不是 `wGreymon`）
+
+> **macOS**：镜像为多架构（amd64 + arm64），在 Docker Desktop / OrbStack 上原生运行。  
+> 如需让切换供应商直接写入 Mac 本地 CLI 配置，请挂载对应目录，例如：  
+> `docker run -p 3000:3000 -v ~/.cc-switch:/root/.cc-switch -v ~/.claude:/root/.claude ghcr.io/wgreymon/cc-switch-web:latest`
 
 **Docker 高级选项**：
 
@@ -361,7 +379,7 @@ pnpm test:unit
 
 ## 更新内容
 
-> 当前版本：[v0.21.0](https://github.com/wGreymon/cc-switch-web/releases/tag/v0.21.0)<br>
+> 当前版本：[最新 Release](https://github.com/wGreymon/cc-switch-web/releases/latest)<br>
 > `v0.21.0` 完成 OpenClaw 第二阶段、全局 Session 搜索、已安装 Skills 发现和 Provider 路由状态展示。
 
 ### v0.21.0 - OpenClaw 第二阶段

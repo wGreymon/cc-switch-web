@@ -309,14 +309,22 @@ jobs:
 
   build-web-server:
     name: Build Web Server Binary
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
             artifact: cc-switch-server-linux-x86_64
-          - target: aarch64-unknown-linux-gnu
+          - os: ubuntu-22.04
+            target: aarch64-unknown-linux-gnu
             artifact: cc-switch-server-linux-aarch64
+          - os: macos-14
+            target: aarch64-apple-darwin
+            artifact: cc-switch-server-darwin-aarch64
+          - os: macos-14
+            target: x86_64-apple-darwin
+            artifact: cc-switch-server-darwin-x86_64
 
     steps:
       - uses: actions/checkout@v4
@@ -373,6 +381,7 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install cross
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Install build deps (native only)
@@ -383,12 +392,13 @@ jobs:
 
       - name: Build server binary
         run: |
-          if [ "${{ matrix.target }}" = "x86_64-unknown-linux-gnu" ]; then
-            cd src-tauri
-            cargo build --release --no-default-features --features web-server --example server --target ${{ matrix.target }}
-          else
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
             # cross 从项目根目录运行，确保 dist-web 目录在容器内可访问
             cross build --release --no-default-features --features web-server --example server --target ${{ matrix.target }} --manifest-path src-tauri/Cargo.toml
+          else
+            # 本机工具链直接构建（Linux x86_64 原生；macOS 上 aarch64 原生、x86_64 交叉均可）
+            cd src-tauri
+            cargo build --release --no-default-features --features web-server --example server --target ${{ matrix.target }}
           fi
 
       - name: Prepare artifact
